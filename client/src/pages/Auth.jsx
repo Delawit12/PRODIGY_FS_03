@@ -4,14 +4,77 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import login from "../assets/Fingerprint-cuate.png";
-
+import { toast } from "sonner";
+import axios from "../lib/api-client";
+import { useNavigate } from "react-router-dom";
+import { useAppStore } from "../store";
 const Auth = () => {
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
-  const [confirmPassword, setConfirmPassword] = useState();
+  const { setUserInfo } = useAppStore();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const navigate = useNavigate();
 
-  const handleLogin = () => {};
-  const handleSignUp = () => {};
+  const validateSignup = () => {
+    if (!email.length) {
+      toast.error("Email is required");
+      return false;
+    }
+    if (!password.length) {
+      toast.error("password is required");
+      return false;
+    }
+    if (password !== confirmPassword) {
+      toast.error(" Password and confirm password should be the same");
+      return false;
+    }
+    return true;
+  };
+
+  const validateLogin = () => {
+    if (!email.length) {
+      toast.error("Email is required");
+      return false;
+    }
+    if (!password.length) {
+      toast.error("password is required");
+      return false;
+    }
+    return true;
+  };
+
+  const handleLogin = async () => {
+    if (validateLogin()) {
+      const response = await axios.post(
+        "api/user/login",
+        { email, password },
+        { withCredentials: true }
+      );
+      if (response.data.user._id) {
+        setUserInfo(response.data.user);
+        if (response.data.user.profileSetup) navigate("/chat");
+        else navigate("/profile");
+      }
+    }
+  };
+  const handleSignUp = async () => {
+    if (validateSignup()) {
+      const response = await axios.post(
+        "api/user/register",
+        {
+          email,
+          password,
+        },
+        { withCredentials: true }
+      );
+      console.log(response);
+      if (response.data.status == "success") {
+        setUserInfo(response.data.user);
+        navigate("/profile");
+      }
+    }
+  };
+
   return (
     <div className="h-[100vh] w-[100vw] flex items-center justify-center">
       <div className="h-[80vh] bg-white border-2 border-white text-opacity-90 shadow-2xl w-[80vw] md:w-[90vw] lg:w-[70vw] xl:w[60vw] rounded-3xl grid xl:grid-cols-2">
@@ -47,14 +110,14 @@ const Auth = () => {
                   type="email"
                   className="rounded-full p-5"
                   value={email}
-                  onchange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
                 <Input
                   placeholder="Password"
                   type="password"
                   className="rounded-full p-5"
                   value={password}
-                  onchange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
                 <Button className="rounded-full" onClick={handleLogin}>
                   Login
@@ -66,21 +129,21 @@ const Auth = () => {
                   type="email"
                   className="rounded-2xl p-5"
                   value={email}
-                  onchange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
                 <Input
                   placeholder="Password"
                   type="password"
                   className="rounded-2xl p-5"
                   value={password}
-                  onchange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
                 <Input
                   placeholder="Confirm Password"
-                  type="confirmPassword"
+                  type="password"
                   className="rounded-2xl p-5"
                   value={confirmPassword}
-                  onchange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
                 <Button className="rounded-full" onClick={handleSignUp}>
                   Sign Up

@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const connectDB = require("./config/db");
-const router = require("./routes/index");
 const cookiesParser = require("cookie-parser");
 const globalErrorHandler = require("./ErrorHandler/errorController");
 
@@ -28,8 +27,10 @@ app.get("/", (request, response) => {
   });
 });
 
+const userRoute = require("./routes/userRoute");
+
 //api endpoints
-app.use("/api", router);
+app.use("/api/user/", userRoute);
 
 connectDB();
 
