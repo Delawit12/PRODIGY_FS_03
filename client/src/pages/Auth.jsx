@@ -70,7 +70,8 @@ const Auth = () => {
       console.log(response);
       if (response.data.status == "success") {
         setUserInfo(response.data.user);
-        navigate("/profile");
+        if (response.data.user.profileSetup) navigate("/chat");
+        else navigate("/profile");
       }
     }
   };

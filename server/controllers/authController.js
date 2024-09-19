@@ -2,8 +2,9 @@ const User = require("../models/userModel.js");
 const bcrypt = require("bcrypt");
 const { jwtSecret, jwtExpiresIn } = require("../config/secret.js");
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
+
 // const Email = require("../utils/email.js");
-const { response } = require("express");
 
 const maxAge = 3 * 24 * 60 * 60 * 1000;
 const createToken = (userId, email) => {
@@ -271,6 +272,119 @@ const authController = {
         error: error.message,
       });
     }
+  },
+  getSingleUser: async (req, res, next) => {
+    try {
+      // find a user by using id
+      console.log(req.id);
+      const user = await User.findById(req.id);
+      if (!user) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "No user found with that ID",
+        });
+      }
+      // send response
+      return res.status(200).json({
+        status: "success",
+        user: user,
+      });
+    } catch (error) {
+      console.log("Error in fetching user:", error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "An error occurred while fetching  user",
+      });
+    }
+  },
+  updateProfile: async (req, res, next) => {
+    try {
+      const id = req.id;
+      const { firstName, lastName, color } = req.body;
+      if (!firstName || !lastName) {
+        return res.status(400).json({
+          status: "bad request",
+          message: "All fields are required",
+        });
+      }
+      const user = await User.findByIdAndUpdate(
+        id,
+        {
+          firstName: firstName,
+          lastName: lastName,
+          color: color,
+          profileSetup: true,
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+      console.log(user);
+      if (!user) {
+        return res.status(404).json({
+          status: "Failed",
+          message: "No user is  found ",
+        });
+      }
+      // send response
+      return res.status(200).json({
+        status: "success",
+        data: {
+          user: user,
+        },
+      });
+    } catch (error) {
+      console.log("Error in updating user:", error);
+      return res.status(500).json({
+        status: "Failed",
+        message: "An error occurred while updating user",
+      });
+    }
+  },
+  updateProfileImage: async (req, res, next) => {
+    if (!req.file) {
+      return res.status(400).json({
+        status: "bad request",
+        message: "File is required",
+      });
+    }
+    let profilePicture;
+    console.log("req.files", req.file);
+    console.log("req.files", req.file.fieldname);
+    if (req.file && req.file.fieldname === "profileImage") {
+      profilePicture = req.file.path;
+      // profilePicture = req.file.profileImage[0].path;
+    }
+    const updatedUser = await User.findByIdAndUpdate(
+      req.id,
+      { profilePic: profilePicture },
+      { new: true, runValidators: true }
+    );
+    console.log("profile", updatedUser);
+    res.status(200).json({
+      status: "success",
+      message: "profile updated successfully",
+      user: { updatedUser },
+    });
+  },
+  removeProfileImage: async (req, res, next) => {
+    const id = req.id;
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(400).json({
+        message: "User Not Found",
+      });
+    }
+    if (user.profilePic) {
+      fs.unlinkSync(user.profilePic);
+    }
+    user.profilePic = null;
+    await user.save();
+    res.status(200).json({
+      status: "success",
+      message: "profile image removed successfully",
+    });
   },
 };
 
